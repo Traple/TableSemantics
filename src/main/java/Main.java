@@ -7,6 +7,8 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Main {
 
@@ -22,7 +24,7 @@ public class Main {
 //        String workspace = "C:\\Users\\Sander van Boom\\Documents\\School\\tables\\TEA0.7RandomCorpus2-2\\resources\\results";
 //        ArrayList<String> title = new ArrayList<String>(Arrays.asList("Comparison","between","copper","substituted","cobalt", "substituted","and","native","yeast", "ADH"));
         ArrayList<String> title = new ArrayList<String>(Arrays.asList("Puriﬁcation","Purification","purification"));
-        ArrayList<String> headers = new ArrayList<String>(Arrays.asList("Purification","Puriﬁcation","Purification" , "purification", "Yield", "Yield", "yield", "Step", "step", "fold"));
+        ArrayList<String> headers = new ArrayList<String>(Arrays.asList("Purification","Puriﬁcation", "purification", "Yield", "yield", "Step", "step", "fold", "Total activity","total activity", "Total protein", "total protein", "activity","protein"));
         //Interesting Queries:
         //"Substrate","Substrate" , "substrate", "Compounds", "Compounds","compounds","Relative", "Relative", "relative","activity"
         ArrayList<Table> tables = readXMLFiles(workspace);
@@ -30,15 +32,26 @@ public class Main {
         System.out.println(vectorMap);
 
         Query query = new Query(title,headers,vectorMap.getTitleMap(),vectorMap.getHeaderMap());
-        System.out.println("Now with query: ");
+   /*     System.out.println("Now with query: ");
         System.out.println(query);
         System.out.println("Now we see if we can do something new: ");
+*/
+        //Filter out the tables that have a relevance score < 2
+
+        Map<Table, Integer> headerVectorMap = new HashMap<Table, Integer>();
+
         for(Table table :VectorMap.sortByValue(query.rankTableHeaders(tables)).keySet()){
-            System.out.println(table + " " + VectorMap.sortByValue(query.rankTableHeaders(tables)).get(table));
+            if(VectorMap.sortByValue(query.rankTableHeaders(tables)).get(table)>1){
+                headerVectorMap.put(table, VectorMap.sortByValue(query.rankTableHeaders(tables)).get(table));
+            }
         }
-        System.out.println("Titles: ");
-        for(Table table : VectorMap.sortByValue(query.rankTableTitles(tables)).keySet()){
-            System.out.println(table + " " + VectorMap.sortByValue(query.rankTableTitles(tables)).get(table));
+
+        System.out.println("Only the juicy stuff, we like low hanging fruit: ");
+        System.out.println(headerVectorMap);
+
+        for(Table table : headerVectorMap.keySet()){
+            System.out.println(table);
+            System.out.println(table.getMappedColumns(headers));
         }
     }
 

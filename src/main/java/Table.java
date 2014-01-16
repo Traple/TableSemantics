@@ -16,9 +16,11 @@ public class Table {
     private String ID;
     private ArrayList<String> title;
     private ArrayList<String> headers;
+    private ArrayList<Column> columns;
 
     public Table(String XMLFile) throws XPathExpressionException, ParserConfigurationException, IOException, SAXException {
         readXMLFile(XMLFile);
+        extractColumns(XMLFile);
     }
 
     private void readXMLFile(String XMLFile) throws ParserConfigurationException, XPathExpressionException, IOException, SAXException {
@@ -76,6 +78,54 @@ public class Table {
                 xpath.compile("/TEAFile/provenance/fromFile");
         ID = (String) expr3.evaluate(doc, XPathConstants.STRING);
         this.ID = ID;
+    }
+    private void extractColumns(String inputFile) throws XPathExpressionException, IOException, SAXException, ParserConfigurationException {
+        ArrayList<Column> columns = new ArrayList<Column>();
+
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
+        DocumentBuilder builder;
+        org.w3c.dom.Document doc;
+        builder = factory.newDocumentBuilder();
+        doc = builder.parse(String.valueOf(inputFile));
+
+        // Create XPathFactory object
+        XPathFactory xpathFactory = XPathFactory.newInstance();
+
+        // Create XPath object
+        XPath xpath = xpathFactory.newXPath();
+        String columnsInFile;
+
+        XPathExpression expr =
+                xpath.compile("/TEAFile/results/columns");
+        columnsInFile = (String) expr.evaluate(doc, XPathConstants.STRING);
+
+        int numberOfColumns= ESM.countOccurrences(columnsInFile, "\n");
+
+        for(int index = 0; index<numberOfColumns;index++){
+            Column currentColumn = new Column(inputFile, index);
+            columns.add(currentColumn);
+        }
+
+        this.columns = columns;
+    }
+
+    /**
+     * this method returns the columns from which the headers map to the query.
+     * @param query A list containing the headers (query)
+     * @return A list of columns that mapped against this query.
+     */
+    public ArrayList<Column> getMappedColumns(ArrayList<String> query){
+        ArrayList<Column> mappedColumns = new ArrayList<Column>();
+        for(String headerQuery : query){
+            for(Column column : columns){
+                if(column.containsHeader(headerQuery)){
+                    System.out.println(headerQuery + " matches " + column);
+                    mappedColumns.add(column);
+                }
+            }
+        }
+        return mappedColumns;
     }
 
     public ArrayList<String> getHeaders(){
