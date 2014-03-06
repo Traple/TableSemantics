@@ -8,6 +8,7 @@ import java.util.Map;
 public class Query {
     private Map<String,Integer> compareScoreTitle;
     private Map<String,Integer> compareScoreHeader;
+    private double distanceParam = 0.3;
 
     public Query(ArrayList<String> title, ArrayList headers, Map<String, Integer> vectorMapTitle, Map<String, Integer> vectorMapHeader){
         compare(title, headers, vectorMapTitle, vectorMapHeader);
@@ -38,6 +39,9 @@ public class Query {
                 counter++;
                 if(header.equals(cell)){
                     compareScoreHeader.put(header, vectorMapHeader.get(cell));
+                }
+                else if(JaroWinkler.compare(cell, header)> distanceParam){
+                    compareScoreTitle.put(header, vectorMapHeader.get(cell));
                 }
                 if(vectorMapHeader.size() == counter&&!compareScoreHeader.containsKey(header)){
                     compareScoreHeader.put(header, 0);

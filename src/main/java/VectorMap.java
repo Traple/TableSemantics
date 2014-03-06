@@ -13,12 +13,13 @@ public class VectorMap {
         createGeneralTitleVectorMap(tables);
 
     }
-
     private void createGeneralHeaderVectorMap(ArrayList<Table> tables){
         Map<String, Integer> generalHeaderMap = new LinkedHashMap<String, Integer>();
         for(Table table : tables){
             ArrayList<String> headers = table.getHeaders();
             for(String header : headers){
+                header = header.replace("ﬁ","fi");
+                header = header.toLowerCase();
                 if(generalHeaderMap.containsKey(header)){
                     generalHeaderMap.put(header, generalHeaderMap.get(header)+1);
                 }
@@ -36,6 +37,8 @@ public class VectorMap {
         for(Table table : tables){
             ArrayList<String> titles = table.getTitle();
             for(String title : titles){
+                title = title.replace("ﬁ","fi");
+                title = title.toLowerCase();
                 if(generalTitleMap.containsKey(title)){
                     generalTitleMap.put(title, generalTitleMap.get(title)+1);
                 }

@@ -6,15 +6,18 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.*;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 
 //This object contains a column of a table.
 //This column will read itself from the XML output file.
 public class Column {
 
     private ArrayList<String> content = new ArrayList<String>();
+    private double similarityThreshold = 0.90;
 
     public Column(String inputFile, int index) throws ParserConfigurationException, SAXException, XPathExpressionException, IOException {
         readColumn(inputFile, index);
+        contentNorm();
     }
     private void readColumn(String inputFile, int index) throws XPathExpressionException, ParserConfigurationException, IOException, SAXException {
         ArrayList<String> content = new ArrayList<String>();
@@ -40,55 +43,101 @@ public class Column {
                 xpath.compile(expression);
         columnInFile = (String) expr.evaluate(doc, XPathConstants.STRING);
         String[] columnInArray = columnInFile.split(", ");
-        for(String word  : columnInArray){
-            content.add(word);
-        }
+        Collections.addAll(content, columnInArray);
         this.content = content;
     }
 
+    /**
+     * This method normalizes the content so it is easier to compare it with the query. This includes:
+     * Glyph conversion
+     * Capital letter conversion
+     */
+    private void contentNorm(){
+        ArrayList<String> oldContent = this.content;
+        ArrayList<String> newContent = new ArrayList<String>();
+        for(String cell : oldContent){
+            cell = cell.toLowerCase();
+            if(cell.contains("ﬁ")){
+                cell = cell.replace("ﬁ", "fi");
+            }
+            newContent.add(cell);
+        }
+        this.content = newContent;
+    }
+
     //To compare the query against this column.
+    //We want to keep the first two cells for the purpose of having a single header
     public boolean containsHeader(String header){
         boolean containsHeader = false;
-/*        if(header.contains(" ")){
-            System.out.println("Breaking The Query");
-            boolean containsAPartOfHeader= false;
-            String[] headersArray = header.split(" ");
-            ArrayList<String> headers = new ArrayList<String>();
-            for(String word : headersArray){
-                headers.add(word);
+        String firstWord = "";
+        String secondWord = "";
+        for(String word : content){
+            if(content.get(0).equals(word)){
+                firstWord = word;
             }
-            System.out.println(headers) ;
-            Header : for(String word : headers){
-                Content : for(String cell : content){
-                    if(cell.contains(word)&& containsAPartOfHeader){
-                        System.out.println(cell + " Overdrive! " + word);
-                        containsHeader = true;
-                        break Header;
-                    }
-                    else if(cell.contains(word)){
-                        containsAPartOfHeader = true;
-                        System.out.println(cell + " got hit by: " + word);
-                        continue Header;
-                    }
-                }
+            if(word.contains(header)){
+                containsHeader = true;
+                break;
             }
-        }*/
-        if(!containsHeader){
-            for(String word : content){
-                if(word.contains(header)){
+            else if(content.size() > 1 && content.get(1).equals(word)){
+                secondWord = word;
+                if((firstWord+secondWord).equals(header)|| (firstWord + " " + word).equals(header)){
                     containsHeader = true;
+                    break;
                 }
+            }
+            else if(content.size() >2 && content.get(2).equals(word) && ((firstWord+secondWord+word).equals(header) ||
+                    (firstWord + " " + secondWord + " " + word).equals(header))){
+                containsHeader = true;
+                break;
+            }
+            else if(content.size() >2 && content.get(2).equals(word) && ((secondWord+word).equals(header) ||
+                    (secondWord + " " + word).equals(header))){
+                containsHeader = true;
+                break;
             }
         }
         return containsHeader;
     }
 
-    public ArrayList<String> getContent() {
-        return content;
+
+    //Loop the same way as contain but use the JaroWrinkler class to validate the similarity.
+    //ASSUMES that the multiple word detection already picked up combination of words. Can be improved according to test results.
+    public boolean mightContainHeader(String header){
+        boolean containsHeader = false;
+        String firstWord = "";
+        String secondWord = "";
+        for(String word : content){
+            if(content.get(0).equals(word)){
+                firstWord = word;
+            }
+            if(JaroWinkler.compare(header, word) > similarityThreshold){
+                containsHeader = true;
+                break;
+            }
+            else if(content.size() > 1 && content.get(1).equals(word)){
+                secondWord = word;
+                if(JaroWinkler.compare((firstWord+secondWord),header)>similarityThreshold ||
+                        JaroWinkler.compare((firstWord+" "+secondWord),header)>similarityThreshold){
+                    containsHeader = true;
+                    break;
+                }
+            }
+            else if(content.size() >2 && content.get(2).equals(word) && JaroWinkler.compare((firstWord+secondWord+word),header)>similarityThreshold
+                    || JaroWinkler.compare((firstWord+" "+secondWord+" "+word),header)>similarityThreshold){
+                containsHeader = true;
+                break;
+            }
+            else if(content.size() >2 && content.get(2).equals(word) && JaroWinkler.compare((secondWord+" "+word),header)>similarityThreshold ||
+                    JaroWinkler.compare((secondWord+word),header)>similarityThreshold){
+                containsHeader = true;
+                break;
+            }
+        }
+        return containsHeader;
     }
 
     public String toString(){
-        String string = content.toString();
-        return string;
+        return content.toString();
     }
 }

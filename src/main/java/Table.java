@@ -1,3 +1,4 @@
+import com.sun.org.apache.xerces.internal.impl.io.MalformedByteSequenceException;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -6,11 +7,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.*;
 import java.io.IOException;
 import java.util.ArrayList;
-
-
-/*TODO: Extend the table class so it will take all the information from the output file.
-  We need to make sure that the information is being kept close. Link relevant headers to relevant titles to
-  (Therefore) relevant cells.     */
 
 public class Table {
     private String ID;
@@ -29,6 +25,8 @@ public class Table {
         DocumentBuilder builder;
         org.w3c.dom.Document doc;
         builder = factory.newDocumentBuilder();
+
+        System.out.println(XMLFile);
         doc = builder.parse(String.valueOf(XMLFile));
 
         // Create XPathFactory object
@@ -78,6 +76,7 @@ public class Table {
                 xpath.compile("/TEAFile/provenance/fromFile");
         ID = (String) expr3.evaluate(doc, XPathConstants.STRING);
         this.ID = ID;
+
     }
     private void extractColumns(String inputFile) throws XPathExpressionException, IOException, SAXException, ParserConfigurationException {
         ArrayList<Column> columns = new ArrayList<Column>();
@@ -117,13 +116,48 @@ public class Table {
      */
     public ArrayList<Column> getMappedColumns(ArrayList<String> query){
         ArrayList<Column> mappedColumns = new ArrayList<Column>();
+        ArrayList<Column> unmappedColumns = columns;
+        boolean mappedAColumn = false;
+        ArrayList<String> unmappedHeaders = new ArrayList<String>();
+        Column mappedColumn = null;
         for(String headerQuery : query){
-            for(Column column : columns){
+            String output = "";
+            boolean headermapped = false;
+            int matches = 0;
+            if(mappedAColumn){
+                unmappedColumns.remove(mappedColumn);
+                mappedAColumn = false;
+            }
+            for(Column column : unmappedColumns){
                 if(column.containsHeader(headerQuery)){
                     System.out.println(headerQuery + " matches " + column);
                     mappedColumns.add(column);
+//                    mappedAColumn = true;
+                    mappedColumn = column;
+                    headermapped = true;
+                    matches += 1;
+//                    break;
                 }
+                else if(column.mightContainHeader(headerQuery)){
+                    System.out.println(headerQuery + " might match " + column);
+                    mappedColumns.add(column);
+                    matches+=1;
+                }
+
             }
+            if(!output.equals("")&&matches>1){
+//                System.out.println(output);
+                output = "";
+                matches = 0;
+            }
+            if(!headermapped){
+//                System.out.println("Header: " + headerQuery + " wasn't mapped!");
+                unmappedHeaders.add(headerQuery);
+            }
+        }
+        System.out.println("Unmapped columns: " + unmappedColumns);
+        if(unmappedColumns.size() == 1 && unmappedHeaders.size() == 1){
+            System.out.println(unmappedHeaders.get(0)+" might match " + unmappedColumns.get(0));
         }
         return mappedColumns;
     }
@@ -135,18 +169,12 @@ public class Table {
     public ArrayList<String> getTitle(){
         return title;
     }
-
-    public String getID() {
-        return ID;
-    }
-
     /**
      * Every table will identify itself using its ID.
      * @return A string containing the ID of the table.
 
      */
     public String toString(){
-        String string = ID;
-        return string;
+        return ID;
     }
 }

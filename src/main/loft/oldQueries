@@ -1,0 +1,15 @@
+//        ArrayList<String> title = new ArrayList<String>(Arrays.asList("steady","state","kinetic","constant","steady-state","constants", "parameters", "speciﬁcity"));
+//        ArrayList<String> headers = new ArrayList<String>(Arrays.asList("substrate", "vmax","kcat", "km", "kcat (s-l)","vmax","kcat/km"));
+//        ArrayList<String> headers2 = new ArrayList<String>(Arrays.asList("substrate", "vmax","kcat","kcat (s-l)","km (mM)","vmax","kcat/km (s-l mm-l)","kcat/km", "km"));
+//  ArrayList<String> title = new ArrayList<String>(Arrays.asList("purification", "fold"));
+//        ArrayList<String> headers = new ArrayList<String>(Arrays.asList("step", "total"," protein", "activity", "specific","activity", "yield", "fold"));
+//        ArrayList<String> headers2 = new ArrayList<String>(Arrays.asList("step", "total protein", "total activity", "specific activity", "yield", "fold"));
+
+//        ArrayList<String> title = new ArrayList<String>(Arrays.asList("Puriﬁcation","Purification","purification"));
+//        ArrayList<String> headers = new ArrayList<String>(Arrays.asList("step", "activity", "total", "specific", "protein", "yield", "fold", "factor", "level", "purification"));                              //Make sure the query only consists of loose words.
+//        ArrayList<String> headers2 = new ArrayList<String>(Arrays.asList("step", "total protein", "total activity", "sp act", "specific activity", "yield", "purification level", "purification factor", "fold"));                            //The query exactly as it is.
+
+//        ArrayList<String> title = new ArrayList<String>(Arrays.asList("hell", "catalytic activity"));
+//        ArrayList<String> headers = new ArrayList<String>(Arrays.asList("kcal/kmol", "kcal/mol", "mutation", "mutant", "aag"));
+//        ArrayList<String> headers2 = new ArrayList<String>(Arrays.asList("kcal/kmol", "kcal/mol", "mutation", "mutant", "aag"));
+

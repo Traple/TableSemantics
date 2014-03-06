@@ -5,53 +5,75 @@ import javax.xml.xpath.XPathExpressionException;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+
+//Interesting Queries:
+//"Purification","Puriﬁcation", "purification", "Yield", "yield", "Step", "step", "fold", "Total activity","total activity", "Total protein", "total protein", "activity","protein"
+//"Substrate","Substrate" , "substrate", "Compounds", "Compounds","compounds","Relative", "Relative", "relative","activity"
 
 public class Main {
-
-
     public static void main(String[] args) throws ParserConfigurationException, SAXException, XPathExpressionException, IOException {
-        //read the XML files
-        //Create general vector map
-        //Find similarity per vector
-        //List files on similarity
-        //Output the results
+        String workspace = "C:\\Users\\Sander van Boom\\Documents\\School\\tables\\TEA0.7RandomCorpus2\\resources\\results";
 
-        String workspace = "C:\\Users\\Sander van Boom\\Documents\\School\\tables\\TEA0.7EnzymeCorpus\\resources\\results";
-//        String workspace = "C:\\Users\\Sander van Boom\\Documents\\School\\tables\\TEA0.7RandomCorpus2-2\\resources\\results";
-//        ArrayList<String> title = new ArrayList<String>(Arrays.asList("Comparison","between","copper","substituted","cobalt", "substituted","and","native","yeast", "ADH"));
-        ArrayList<String> title = new ArrayList<String>(Arrays.asList("Puriﬁcation","Purification","purification"));
-        ArrayList<String> headers = new ArrayList<String>(Arrays.asList("Purification","Puriﬁcation", "purification", "Yield", "yield", "Step", "step", "fold", "Total activity","total activity", "Total protein", "total protein", "activity","protein"));
-        //Interesting Queries:
-        //"Substrate","Substrate" , "substrate", "Compounds", "Compounds","compounds","Relative", "Relative", "relative","activity"
+        //Explanation of the Query:
+        //title: Only used for the detection of relevant papers
+        //headers: Only used for the detection of relevant papers
+        //headers IS NOT ALLOWED TO CONTAIN MULTIPLE WORDS.
+        //headers2: Used for mapping the information
+
+          ArrayList<String> title = new ArrayList<String>(Arrays.asList("loci", "combination"));
+          ArrayList<String> headers = new ArrayList<String>(Arrays.asList("loci", "patterns", "variable"));
+          ArrayList<String> headers2 = new ArrayList<String>(Arrays.asList("loci", "isolates", "variable"));
+
         ArrayList<Table> tables = readXMLFiles(workspace);
         VectorMap vectorMap = new VectorMap(tables);
-        System.out.println(vectorMap);
 
         Query query = new Query(title,headers,vectorMap.getTitleMap(),vectorMap.getHeaderMap());
-   /*     System.out.println("Now with query: ");
         System.out.println(query);
-        System.out.println("Now we see if we can do something new: ");
-*/
         //Filter out the tables that have a relevance score < 2
 
         Map<Table, Integer> headerVectorMap = new HashMap<Table, Integer>();
 
         for(Table table :VectorMap.sortByValue(query.rankTableHeaders(tables)).keySet()){
-            if(VectorMap.sortByValue(query.rankTableHeaders(tables)).get(table)>1){
+            if(VectorMap.sortByValue(query.rankTableHeaders(tables)).get(table)>-1){
                 headerVectorMap.put(table, VectorMap.sortByValue(query.rankTableHeaders(tables)).get(table));
             }
         }
 
-        System.out.println("Only the juicy stuff, we like low hanging fruit: ");
-        System.out.println(headerVectorMap);
+        Map<Table, Integer> titleVectorMap = new HashMap<Table, Integer>();
+        for(Table table :VectorMap.sortByValue(query.rankTableTitles(tables)).keySet()){
+            if(VectorMap.sortByValue(query.rankTableTitles(tables)).get(table)>-1){
+                titleVectorMap.put(table, VectorMap.sortByValue(query.rankTableTitles(tables)).get(table));
+            }
+        }
+
+        //Todo: combine the title and header scores in a single relevance vector.
+        Map<Table, Integer> relevanceVectorMap = new HashMap<Table, Integer>();
 
         for(Table table : headerVectorMap.keySet()){
+            int relevanceScore;
+            if(titleVectorMap.containsKey(table)){
+                relevanceScore = titleVectorMap.get(table) + headerVectorMap.get(table);
+                relevanceVectorMap.put(table,relevanceScore);
+            }
+            else{
+                relevanceVectorMap.put(table, headerVectorMap.get(table));
+            }
+        }
+        for(Table table : titleVectorMap.keySet()){
+            if(!relevanceVectorMap.containsKey(table)){
+                relevanceVectorMap.put(table, titleVectorMap.get(table));
+            }
+        }
+        relevanceVectorMap = VectorMap.sortByValue(relevanceVectorMap);
+
+
+        System.out.println("Only the juicy stuff, we like low hanging fruit: ");
+        System.out.println(relevanceVectorMap);
+
+        for(Table table : relevanceVectorMap.keySet()){
             System.out.println(table);
-            System.out.println(table.getMappedColumns(headers));
+            System.out.println(table.getMappedColumns(headers2));
         }
     }
 
@@ -60,6 +82,7 @@ public class Main {
      * @param workspace The workspace that was used during the run.
      */
     public static ArrayList<Table> readXMLFiles(String workspace) throws ParserConfigurationException, SAXException, XPathExpressionException, IOException {
+        System.out.println("Reading tables");
         ArrayList<String> XMLFiles = findXMLs(workspace);
         ArrayList<Table> tables = new ArrayList<Table>();
         for(String XMLFile : XMLFiles){
