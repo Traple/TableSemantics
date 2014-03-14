@@ -21,9 +21,6 @@ public class Query {
             int counter = 0;
             for(String cell : vectorMapTitle.keySet()){
                 counter++;
-//                if(word.equals(cell)&&compareScore.containsKey(word)){
-//                    compareScore.put(word, compareScore.get(word)+1);
-//                }
                 if(word.equals(cell)){
                     compareScoreTitle.put(word, vectorMapTitle.get(cell));
                 }
@@ -58,7 +55,6 @@ public class Query {
      */
     public Map<Table, Integer> rankTableHeaders(ArrayList<Table> tables){
         Map<Table, Integer> tableRanking = new HashMap<Table, Integer>();
-
         for(Table table : tables){
             tableRanking.put(table, 0);
             //First we do the headers:

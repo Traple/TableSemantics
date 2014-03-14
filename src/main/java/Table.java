@@ -1,11 +1,12 @@
 import com.sun.org.apache.xerces.internal.impl.io.MalformedByteSequenceException;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.*;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 
 public class Table {
@@ -13,10 +14,27 @@ public class Table {
     private ArrayList<String> title;
     private ArrayList<String> headers;
     private ArrayList<Column> columns;
+    private boolean isHeaderColumn;
+    private String humanReadableMatches;
+    private ArrayList<Column> significantUnmappedColumns;
 
-    public Table(String XMLFile) throws XPathExpressionException, ParserConfigurationException, IOException, SAXException {
+    public Table(String XMLFile, ArrayList<String> queries, boolean supportHeaderColumns, int requiredHeadersInHeaderColumn) throws XPathExpressionException, ParserConfigurationException, IOException, SAXException {
         readXMLFile(XMLFile);
         extractColumns(XMLFile);
+        if(supportHeaderColumns){
+            HeaderColumn headerColumn = new HeaderColumn(columns, queries, requiredHeadersInHeaderColumn);
+            if(headerColumn.containsHeaderColumn()){
+                this.isHeaderColumn = true;
+                columns = headerColumn.getColumns();
+
+            }
+            else{
+                this.isHeaderColumn = false;
+            }
+        }
+        else{
+            this.isHeaderColumn = false;
+        }
     }
 
     private void readXMLFile(String XMLFile) throws ParserConfigurationException, XPathExpressionException, IOException, SAXException {
@@ -120,6 +138,8 @@ public class Table {
         boolean mappedAColumn = false;
         ArrayList<String> unmappedHeaders = new ArrayList<String>();
         Column mappedColumn = null;
+        String lineSep = System.getProperty("line.separator");
+        String humanReadableMatches = "";
         for(String headerQuery : query){
             String output = "";
             boolean headermapped = false;
@@ -130,7 +150,8 @@ public class Table {
             }
             for(Column column : unmappedColumns){
                 if(column.containsHeader(headerQuery)){
-                    System.out.println(headerQuery + " matches " + column);
+//                    System.out.println(headerQuery + " matches " + column);
+                    humanReadableMatches = humanReadableMatches + (headerQuery + " matches " + column) + lineSep;
                     mappedColumns.add(column);
 //                    mappedAColumn = true;
                     mappedColumn = column;
@@ -139,7 +160,8 @@ public class Table {
 //                    break;
                 }
                 else if(column.mightContainHeader(headerQuery)){
-                    System.out.println(headerQuery + " might match " + column);
+                    humanReadableMatches = humanReadableMatches + (headerQuery + " might match " + column) + lineSep;
+//                    System.out.println(headerQuery + " might match " + column);
                     mappedColumns.add(column);
                     matches+=1;
                 }
@@ -155,10 +177,13 @@ public class Table {
                 unmappedHeaders.add(headerQuery);
             }
         }
-        System.out.println("Unmapped columns: " + unmappedColumns);
+//        System.out.println("Unmapped columns: " + unmappedColumns);
         if(unmappedColumns.size() == 1 && unmappedHeaders.size() == 1){
-            System.out.println(unmappedHeaders.get(0)+" might match " + unmappedColumns.get(0));
+//            System.out.println(unmappedHeaders.get(0)+" might match " + unmappedColumns.get(0));
+            this.significantUnmappedColumns = unmappedColumns;
         }
+
+        this.humanReadableMatches = humanReadableMatches;
         return mappedColumns;
     }
 
@@ -177,4 +202,15 @@ public class Table {
     public String toString(){
         return ID;
     }
+
+    public String getHumanReadableMatches() {
+        return humanReadableMatches;
+    }
+    public ArrayList<Column> getSignificantUnmappedColumns() {
+        return significantUnmappedColumns;
+    }
+    public boolean isHeaderColumn (){
+        return isHeaderColumn;
+    }
+
 }

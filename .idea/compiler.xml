@@ -25,6 +25,9 @@
         <module name="TableSemantics" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="TableSemantics" target="1.6" />
+    </bytecodeTargetLevel>
   </component>
 </project>
 

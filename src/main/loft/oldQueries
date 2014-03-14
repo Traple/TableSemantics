@@ -1,3 +1,7 @@
+//Interesting Queries:
+//"Purification","Puriﬁcation", "purification", "Yield", "yield", "Step", "step", "fold", "Total activity","total activity", "Total protein", "total protein", "activity","protein"
+//"Substrate","Substrate" , "substrate", "Compounds", "Compounds","compounds","Relative", "Relative", "relative","activity"
+
 //        ArrayList<String> title = new ArrayList<String>(Arrays.asList("steady","state","kinetic","constant","steady-state","constants", "parameters", "speciﬁcity"));
 //        ArrayList<String> headers = new ArrayList<String>(Arrays.asList("substrate", "vmax","kcat", "km", "kcat (s-l)","vmax","kcat/km"));
 //        ArrayList<String> headers2 = new ArrayList<String>(Arrays.asList("substrate", "vmax","kcat","kcat (s-l)","km (mM)","vmax","kcat/km (s-l mm-l)","kcat/km", "km"));

@@ -15,10 +15,29 @@ public class Column {
     private ArrayList<String> content = new ArrayList<String>();
     private double similarityThreshold = 0.90;
 
+    /**
+     * This constructor creates a new column by using a TEA input file.
+     * @param inputFile one of the TEA output files (XML)
+     * @param index which column this object is (first, second etc.)
+     * @throws ParserConfigurationException if we cant parse the XML
+     * @throws SAXException when there is something wrong with the API
+     * @throws XPathExpressionException if there is something wrong with the xml file
+     * @throws IOException if the program cant find the file
+     */
     public Column(String inputFile, int index) throws ParserConfigurationException, SAXException, XPathExpressionException, IOException {
         readColumn(inputFile, index);
         contentNorm();
     }
+
+    /**
+     * This constructor creates a new column by using an arraylist containing the content of the column.
+     * @param content
+     */
+    public Column(ArrayList<String> content){
+        this.content = content;
+        contentNorm();
+    }
+
     private void readColumn(String inputFile, int index) throws XPathExpressionException, ParserConfigurationException, IOException, SAXException {
         ArrayList<String> content = new ArrayList<String>();
 
@@ -101,8 +120,14 @@ public class Column {
     }
 
 
-    //Loop the same way as contain but use the JaroWrinkler class to validate the similarity.
-    //ASSUMES that the multiple word detection already picked up combination of words. Can be improved according to test results.
+
+
+    /**
+     * Loop the same way as contain but use the JaroWrinkler class to validate the similarity.
+     * ASSUMES that the multiple word detection already picked up combination of words. Can be improved according to test results.
+     * @param header A header to be tested for mapping.
+     * @return a boolean that returns true if the JaroWrinkler algoritm returns positive.
+     */
     public boolean mightContainHeader(String header){
         boolean containsHeader = false;
         String firstWord = "";
@@ -137,7 +162,17 @@ public class Column {
         return containsHeader;
     }
 
+    //This toString method returns the current content of the column.
     public String toString(){
         return content.toString();
+    }
+
+    public ArrayList<String> getContent() {
+        return content;
+    }
+
+    //if the column need to change its content (Only used by the columnSwap used in the HeaderColumn.
+    public void setContent(ArrayList<String> content) {
+        this.content = content;
     }
 }

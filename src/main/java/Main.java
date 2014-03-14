@@ -1,19 +1,17 @@
+import org.apache.commons.cli.ParseException;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.*;
 
-//Interesting Queries:
-//"Purification","Puriﬁcation", "purification", "Yield", "yield", "Step", "step", "fold", "Total activity","total activity", "Total protein", "total protein", "activity","protein"
-//"Substrate","Substrate" , "substrate", "Compounds", "Compounds","compounds","Relative", "Relative", "relative","activity"
-
 public class Main {
-    public static void main(String[] args) throws ParserConfigurationException, SAXException, XPathExpressionException, IOException {
-        String workspace = "C:\\Users\\Sander van Boom\\Documents\\School\\tables\\TEA0.7RandomCorpus2\\resources\\results";
+    public static void main(String[] args) throws ParserConfigurationException, SAXException, XPathExpressionException, IOException, ParseException {
+        String workspace = "C:/Users/Sander van Boom/Documents/School/tables/ic50corpus/allResults";
 
         //Explanation of the Query:
         //title: Only used for the detection of relevant papers
@@ -21,11 +19,27 @@ public class Main {
         //headers IS NOT ALLOWED TO CONTAIN MULTIPLE WORDS.
         //headers2: Used for mapping the information
 
-          ArrayList<String> title = new ArrayList<String>(Arrays.asList("loci", "combination"));
-          ArrayList<String> headers = new ArrayList<String>(Arrays.asList("loci", "patterns", "variable"));
-          ArrayList<String> headers2 = new ArrayList<String>(Arrays.asList("loci", "isolates", "variable"));
+        ArgumentProcessor arguments = new ArgumentProcessor(args);
+        ArrayList<String> title = arguments.getTitle();
+        ArrayList<String> headers = arguments.getHeaders();
+        ArrayList<String> headers2 = arguments.getHeaders();
+        boolean supportHeaderColumn = arguments.supportHeaderColumns();
+        boolean iteration = arguments.supportIteration();
 
-        ArrayList<Table> tables = readXMLFiles(workspace);
+//        boolean supportHeaderColumn = true;
+        int requiredHeadersInHeaderColumn = 2;
+//        boolean iteration = true;
+        int maxRunNumber = 3;
+//        ArrayList<String> title = new ArrayList<String>(Arrays.asList("data", "collection", "refinement", "statistics"));
+//        ArrayList<String> headers = new ArrayList<String>(Arrays.asList("space", "group", "resolution", "completeness", "unique", "reflections", "cell", "dimensions"));
+//        ArrayList<String> headers2 = new ArrayList<String>(Arrays.asList("space group", "resolution", "completeness", "unique reflections","cell dimensions" ));
+
+
+//        ArrayList<String> title = new ArrayList<String>(Arrays.asList("binding","assay"));
+//        ArrayList<String> headers = new ArrayList<String>(Arrays.asList("ic50", "Peptide","sequence", "Residue","substituted"));
+//        ArrayList<String> headers2 = new ArrayList<String>(Arrays.asList("ic50", "Peptide sequence", "Residue substituted"));
+
+        ArrayList<Table> tables = readXMLFiles(workspace, headers2, supportHeaderColumn, requiredHeadersInHeaderColumn);
         VectorMap vectorMap = new VectorMap(tables);
 
         Query query = new Query(title,headers,vectorMap.getTitleMap(),vectorMap.getHeaderMap());
@@ -47,7 +61,6 @@ public class Main {
             }
         }
 
-        //Todo: combine the title and header scores in a single relevance vector.
         Map<Table, Integer> relevanceVectorMap = new HashMap<Table, Integer>();
 
         for(Table table : headerVectorMap.keySet()){
@@ -68,12 +81,66 @@ public class Main {
         relevanceVectorMap = VectorMap.sortByValue(relevanceVectorMap);
 
 
-        System.out.println("Only the juicy stuff, we like low hanging fruit: ");
-        System.out.println(relevanceVectorMap);
+        //~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+        //Header Mapping (TEA MAP)
+        //TODO: Create an iteration process so unmapped columns can be used in the query if the table score is high enough also create appropriate thresholds and parameters.
+        //TODO: Use another test set to prove that the iteration is possible.
 
-        for(Table table : relevanceVectorMap.keySet()){
-            System.out.println(table);
-            System.out.println(table.getMappedColumns(headers2));
+        if(iteration){
+            int runNumber = 0;
+            String lineSep = System.getProperty("line.separator");
+            while (true){
+                String humanReadableOutput = "Current results of table mapping, run number: " + runNumber + lineSep;
+                System.out.println("Only the juicy stuff, we like low hanging fruit: ");
+                System.out.println(relevanceVectorMap);
+
+                humanReadableOutput = humanReadableOutput + relevanceVectorMap + lineSep;
+                for(Table table : relevanceVectorMap.keySet()){
+                    if(table.isHeaderColumn()){
+                        System.out.println("This Table is contains a headerColumn. Mapping may not be as accurate.");
+                        humanReadableOutput = humanReadableOutput + "This Table is contains a headerColumn. Mapping may not be as accurate." + lineSep;
+                    }
+                    if(!table.getMappedColumns(headers2).isEmpty()){
+                        System.out.println(table);
+                        humanReadableOutput = humanReadableOutput + table + lineSep;
+                        System.out.println(table.getMappedColumns(headers2));
+                        humanReadableOutput = humanReadableOutput + table.getMappedColumns(headers2) + lineSep;
+                        humanReadableOutput = humanReadableOutput + table.getHumanReadableMatches();
+                    }
+                    if(table.getSignificantUnmappedColumns() != (null)&& !table.getSignificantUnmappedColumns().isEmpty()){
+                        System.out.println("signif Unmapped Cols: " + table.getSignificantUnmappedColumns());
+                    }
+                }
+                writeHumanReadableOutput(humanReadableOutput, workspace);
+                runNumber++;
+                if(runNumber == maxRunNumber){
+                    break;
+                }
+            }
+        }
+        else{
+            String humanReadableOutput = "Current results of table mapping: ";
+            System.out.println("Only the juicy stuff, we like low hanging fruit: ");
+            System.out.println(relevanceVectorMap);
+            String lineSep = System.getProperty("line.separator");
+            humanReadableOutput = humanReadableOutput + relevanceVectorMap + lineSep;
+            for(Table table : relevanceVectorMap.keySet()){
+                if(table.isHeaderColumn()){
+                    System.out.println("This Table is contains a headerColumn. Mapping may not be as accurate.");
+                    humanReadableOutput = humanReadableOutput + "This Table is contains a headerColumn. Mapping may not be as accurate." + lineSep;
+                }
+                if(!table.getMappedColumns(headers2).isEmpty()){
+                    System.out.println(table);
+                    humanReadableOutput = humanReadableOutput + table + lineSep;
+                    System.out.println(table.getMappedColumns(headers2));
+                    humanReadableOutput = humanReadableOutput + table.getMappedColumns(headers2) + lineSep;
+                    humanReadableOutput = humanReadableOutput + table.getHumanReadableMatches();
+                }
+                if(table.getSignificantUnmappedColumns() != (null)&& !table.getSignificantUnmappedColumns().isEmpty()){
+                    System.out.println("signif Unmapped Cols: " + table.getSignificantUnmappedColumns());
+                }
+            }
+            writeHumanReadableOutput(humanReadableOutput, workspace);
         }
     }
 
@@ -81,12 +148,12 @@ public class Main {
      * This method finds the XML files (using the findXMLs method) and read their properties. These are stored in the Table class.
      * @param workspace The workspace that was used during the run.
      */
-    public static ArrayList<Table> readXMLFiles(String workspace) throws ParserConfigurationException, SAXException, XPathExpressionException, IOException {
+    public static ArrayList<Table> readXMLFiles(String workspace,ArrayList<String> queries, boolean supportHeaderColumns, int requiredHeadersInHeaderColumn) throws ParserConfigurationException, SAXException, XPathExpressionException, IOException {
         System.out.println("Reading tables");
         ArrayList<String> XMLFiles = findXMLs(workspace);
         ArrayList<Table> tables = new ArrayList<Table>();
         for(String XMLFile : XMLFiles){
-            Table currentTable = new Table(XMLFile);
+            Table currentTable = new Table(XMLFile, queries, supportHeaderColumns, requiredHeadersInHeaderColumn);
             tables.add(currentTable);
 
         }
@@ -106,5 +173,21 @@ public class Main {
         }
         System.out.println(XMLFiles);
         return XMLFiles;
+    }
+
+    /**
+     * This method writes the collected debugContent to a debug file.
+     * @param content A string containing the collected content
+     * @param location The location for the method to write to.
+     * @throws IOException When an incorrect path has been given.
+     */
+    private static void writeHumanReadableOutput(String content, String location) throws IOException {
+        System.out.println("Writing to file: " + location + "/output.txt");
+        FileWriter fileWriter;
+        String writeLocation = location + "/output.txt";
+        File newTextFile = new File(writeLocation);
+        fileWriter = new FileWriter(newTextFile);
+        fileWriter.write(content);
+        fileWriter.close();
     }
 }
