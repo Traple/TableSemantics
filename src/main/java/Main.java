@@ -11,7 +11,6 @@ import java.util.*;
 
 public class Main {
     public static void main(String[] args) throws ParserConfigurationException, SAXException, XPathExpressionException, IOException, ParseException {
-        String workspace = "C:/Users/Sander van Boom/Documents/School/tables/ic50corpus/allResults";
 
         //Explanation of the Query:
         //title: Only used for the detection of relevant papers
@@ -20,20 +19,23 @@ public class Main {
         //headers2: Used for mapping the information
 
         ArgumentProcessor arguments = new ArgumentProcessor(args);
+        String workspace = arguments.getWorkspace();
+        System.out.println("Workspace: " + workspace);
         ArrayList<String> title = arguments.getTitle();
         ArrayList<String> headers = arguments.getHeaders();
         ArrayList<String> headers2 = arguments.getHeaders();
         boolean supportHeaderColumn = arguments.supportHeaderColumns();
         boolean iteration = arguments.supportIteration();
+        ArrayList<String> superWords = new ArrayList<String>(Arrays.asList("alcohol"));
 
-//        boolean supportHeaderColumn = true;
         int requiredHeadersInHeaderColumn = 2;
-//        boolean iteration = true;
         int maxRunNumber = 3;
+        int superWordScore = 0;
+        int relevanceThreshold = 3;
+
 //        ArrayList<String> title = new ArrayList<String>(Arrays.asList("data", "collection", "refinement", "statistics"));
 //        ArrayList<String> headers = new ArrayList<String>(Arrays.asList("space", "group", "resolution", "completeness", "unique", "reflections", "cell", "dimensions"));
 //        ArrayList<String> headers2 = new ArrayList<String>(Arrays.asList("space group", "resolution", "completeness", "unique reflections","cell dimensions" ));
-
 
 //        ArrayList<String> title = new ArrayList<String>(Arrays.asList("binding","assay"));
 //        ArrayList<String> headers = new ArrayList<String>(Arrays.asList("ic50", "Peptide","sequence", "Residue","substituted"));
@@ -61,6 +63,7 @@ public class Main {
             }
         }
 
+        //Now we add the two values together.
         Map<Table, Integer> relevanceVectorMap = new HashMap<Table, Integer>();
 
         for(Table table : headerVectorMap.keySet()){
@@ -78,17 +81,38 @@ public class Main {
                 relevanceVectorMap.put(table, titleVectorMap.get(table));
             }
         }
-        relevanceVectorMap = VectorMap.sortByValue(relevanceVectorMap);
+        int score;
 
+        if(!superWords.isEmpty()){
+            for(String word : superWords){
+                for(Table table : relevanceVectorMap.keySet()){
+                    if(table.getTitle().contains(word)){
+                        score = relevanceVectorMap.get(table);
+                        relevanceVectorMap.put(table, score+superWordScore);
+                    }
+                }
+            }
+        }
+
+        relevanceVectorMap = VectorMap.sortByValue(relevanceVectorMap);
+        String relevantArticles = "";
+        String lineSep = System.getProperty("line.separator");
+
+        for(Table table : relevanceVectorMap.keySet()){
+            if(relevanceVectorMap.get(table)> relevanceThreshold){
+                relevantArticles = relevantArticles +table.getXMLFile()+lineSep +  table.getTitle() + lineSep + relevanceVectorMap.get(table) +lineSep;
+            }
+        }
+
+        writeHumanReadableOutput(relevantArticles, workspace + "/ofRelevance.txt");
 
         //~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
-        //Header Mapping (TEA MAP)
-        //TODO: Create an iteration process so unmapped columns can be used in the query if the table score is high enough also create appropriate thresholds and parameters.
+        //Header Mapping (TEA Link)
         //TODO: Use another test set to prove that the iteration is possible.
 
         if(iteration){
             int runNumber = 0;
-            String lineSep = System.getProperty("line.separator");
+
             while (true){
                 String humanReadableOutput = "Current results of table mapping, run number: " + runNumber + lineSep;
                 System.out.println("Only the juicy stuff, we like low hanging fruit: ");
@@ -122,7 +146,7 @@ public class Main {
             String humanReadableOutput = "Current results of table mapping: ";
             System.out.println("Only the juicy stuff, we like low hanging fruit: ");
             System.out.println(relevanceVectorMap);
-            String lineSep = System.getProperty("line.separator");
+            lineSep = System.getProperty("line.separator");
             humanReadableOutput = humanReadableOutput + relevanceVectorMap + lineSep;
             for(Table table : relevanceVectorMap.keySet()){
                 if(table.isHeaderColumn()){
@@ -140,7 +164,7 @@ public class Main {
                     System.out.println("signif Unmapped Cols: " + table.getSignificantUnmappedColumns());
                 }
             }
-            writeHumanReadableOutput(humanReadableOutput, workspace);
+            writeHumanReadableOutput(humanReadableOutput, workspace + "/output.txt");
         }
     }
 
@@ -155,7 +179,6 @@ public class Main {
         for(String XMLFile : XMLFiles){
             Table currentTable = new Table(XMLFile, queries, supportHeaderColumns, requiredHeadersInHeaderColumn);
             tables.add(currentTable);
-
         }
         return tables;
     }
@@ -182,10 +205,9 @@ public class Main {
      * @throws IOException When an incorrect path has been given.
      */
     private static void writeHumanReadableOutput(String content, String location) throws IOException {
-        System.out.println("Writing to file: " + location + "/output.txt");
+        System.out.println("Writing to file: " + location);
         FileWriter fileWriter;
-        String writeLocation = location + "/output.txt";
-        File newTextFile = new File(writeLocation);
+        File newTextFile = new File(location);
         fileWriter = new FileWriter(newTextFile);
         fileWriter.write(content);
         fileWriter.close();

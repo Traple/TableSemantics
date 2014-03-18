@@ -8,10 +8,11 @@ import java.util.Map;
 public class Query {
     private Map<String,Integer> compareScoreTitle;
     private Map<String,Integer> compareScoreHeader;
-    private double distanceParam = 0.3;
+    private double distanceParam;
 
-    public Query(ArrayList<String> title, ArrayList headers, Map<String, Integer> vectorMapTitle, Map<String, Integer> vectorMapHeader){
+    public Query(ArrayList<String> title, ArrayList<String> headers, Map<String, Integer> vectorMapTitle, Map<String, Integer> vectorMapHeader){
         compare(title, headers, vectorMapTitle, vectorMapHeader);
+        distanceParam = 0.3;
     }
 
     private void compare(ArrayList<String> title, ArrayList<String> headers, Map<String, Integer> vectorMapTitle, Map<String, Integer>vectorMapHeader ){

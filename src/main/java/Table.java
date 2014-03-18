@@ -1,5 +1,3 @@
-import com.sun.org.apache.xerces.internal.impl.io.MalformedByteSequenceException;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -17,8 +15,10 @@ public class Table {
     private boolean isHeaderColumn;
     private String humanReadableMatches;
     private ArrayList<Column> significantUnmappedColumns;
+    private String XMLFile;
 
     public Table(String XMLFile, ArrayList<String> queries, boolean supportHeaderColumns, int requiredHeadersInHeaderColumn) throws XPathExpressionException, ParserConfigurationException, IOException, SAXException {
+        this.XMLFile = XMLFile;
         readXMLFile(XMLFile);
         extractColumns(XMLFile);
         if(supportHeaderColumns){
@@ -150,36 +150,29 @@ public class Table {
             }
             for(Column column : unmappedColumns){
                 if(column.containsHeader(headerQuery)){
-//                    System.out.println(headerQuery + " matches " + column);
                     humanReadableMatches = humanReadableMatches + (headerQuery + " matches " + column) + lineSep;
                     mappedColumns.add(column);
-//                    mappedAColumn = true;
+                    mappedAColumn = true;
                     mappedColumn = column;
                     headermapped = true;
                     matches += 1;
-//                    break;
                 }
                 else if(column.mightContainHeader(headerQuery)){
                     humanReadableMatches = humanReadableMatches + (headerQuery + " might match " + column) + lineSep;
-//                    System.out.println(headerQuery + " might match " + column);
                     mappedColumns.add(column);
                     matches+=1;
                 }
 
             }
             if(!output.equals("")&&matches>1){
-//                System.out.println(output);
                 output = "";
                 matches = 0;
             }
             if(!headermapped){
-//                System.out.println("Header: " + headerQuery + " wasn't mapped!");
                 unmappedHeaders.add(headerQuery);
             }
         }
-//        System.out.println("Unmapped columns: " + unmappedColumns);
         if(unmappedColumns.size() == 1 && unmappedHeaders.size() == 1){
-//            System.out.println(unmappedHeaders.get(0)+" might match " + unmappedColumns.get(0));
             this.significantUnmappedColumns = unmappedColumns;
         }
 
@@ -211,6 +204,9 @@ public class Table {
     }
     public boolean isHeaderColumn (){
         return isHeaderColumn;
+    }
+    public String getXMLFile(){
+        return XMLFile;
     }
 
 }

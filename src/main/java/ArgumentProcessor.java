@@ -4,23 +4,31 @@ import java.util.Arrays;
 
 public class ArgumentProcessor {
 
+    private String workspace;
     private ArrayList<String> headers;
     private ArrayList<String> title;
     private boolean supportHeaderColumns;
     private boolean supportIteration;
 
+    /**
+     * This method will process the arguments given by the user.
+     * @param args the arguments given by the user
+     * @throws ParseException
+     */
     public ArgumentProcessor(String[] args) throws ParseException {
         CommandLineParser parser = new PosixParser();
         Options options = new Options();
 
         Option help = new Option("H", "Help",false ,"This is the help file of TEA.");
         Option query = new Option("Q", "Query", true, "The full path to the query table.");
-        Option headers = new Option("H", "Headers", true, "A string containing the headers for the query. Also requires the title option.");
+        Option workspace = new Option("W", "Workspace", true, "The full path to the workspace");
+        Option headers = new Option("HE", "Headers", true, "A string containing the headers for the query. Also requires the title option.");
         Option title = new Option("T","Title", true, "A string containing the title for the query. Also requires the header option.");
         Option supportHeaderColumn = new Option("HC" , "HeaderColumn", false, "Give the algorithm header Column support.");
 
         options.addOption(help);
         options.addOption(query);
+        options.addOption(workspace);
         options.addOption(headers);
         options.addOption(title);
         options.addOption(supportHeaderColumn);
@@ -41,11 +49,26 @@ public class ArgumentProcessor {
         this.title = setTitle(line);
         this.supportHeaderColumns = setHeaderColumnSupport(line);
         this.supportIteration = setSupportIteration(line);
+        this.workspace = setWorkspace(line);
     }
+
+    /**
+     * Sets the workspace from the comand line.
+     * @param line the commandline as extracted from the constructor.
+     * @return a string containing the workspace.
+     */
+    private String setWorkspace(CommandLine line){
+        String workspace = null;
+        if(line.hasOption("W")){
+            workspace = line.getOptionValue("W");
+        }
+        return workspace;
+    }
+
     private ArrayList<String> setHeaders(CommandLine line){
         ArrayList<String> headers = new ArrayList<String>();
-        if(line.hasOption("H")){
-            headers.addAll(Arrays.asList(line.getOptionValue("H").split(",")));
+        if(line.hasOption("HE")){
+            headers.addAll(Arrays.asList(line.getOptionValue("HE").split(",")));
         }
         return headers;
     }
@@ -87,5 +110,8 @@ public class ArgumentProcessor {
 
     public boolean supportIteration(){
         return supportIteration;
+    }
+    public String getWorkspace(){
+        return workspace;
     }
 }

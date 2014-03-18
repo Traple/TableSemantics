@@ -13,7 +13,7 @@ import java.util.Collections;
 public class Column {
 
     private ArrayList<String> content = new ArrayList<String>();
-    private double similarityThreshold = 0.90;
+    private double similarityThreshold;
 
     /**
      * This constructor creates a new column by using a TEA input file.
@@ -25,19 +25,29 @@ public class Column {
      * @throws IOException if the program cant find the file
      */
     public Column(String inputFile, int index) throws ParserConfigurationException, SAXException, XPathExpressionException, IOException {
+        similarityThreshold = 0.90;
         readColumn(inputFile, index);
         contentNorm();
     }
 
     /**
      * This constructor creates a new column by using an arraylist containing the content of the column.
-     * @param content
+     * @param content the content of the column
      */
     public Column(ArrayList<String> content){
         this.content = content;
         contentNorm();
     }
 
+    /**
+     * Read the information in the column. Sets the content field.
+     * @param inputFile the input file provided by the constructor.
+     * @param index the index of this file, used to distinguish this column.
+     * @throws XPathExpressionException
+     * @throws ParserConfigurationException
+     * @throws IOException
+     * @throws SAXException
+     */
     private void readColumn(String inputFile, int index) throws XPathExpressionException, ParserConfigurationException, IOException, SAXException {
         ArrayList<String> content = new ArrayList<String>();
 
@@ -53,7 +63,6 @@ public class Column {
 
         // Create XPath object
         XPath xpath = xpathFactory.newXPath();
-
 
         String expression = "(/TEAFile/results/columns/column)["+index+"]";
         String columnInFile;
@@ -118,9 +127,6 @@ public class Column {
         }
         return containsHeader;
     }
-
-
-
 
     /**
      * Loop the same way as contain but use the JaroWrinkler class to validate the similarity.
